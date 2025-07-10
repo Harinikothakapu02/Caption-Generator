@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ImageCaptioner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f1f1f1;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 50px;
+        }
+
+        .section {
+            width: 45%;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .section.border {
+            border: 1px solid #ccc;
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            width: calc(50% - 10px);
+        }
+
+        .input-container input[type="text"],
+        .input-container input[type="file"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .preview-container {
+            text-align: center;
+        }
+
+        .preview-container img {
+            margin: 0 auto;
+            max-width: 100%;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .spinner {
+            display: none;
+            text-align: center;
+        }
+
+        .spinner img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .result {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .result div {
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>ImageCaptioner</h1>
+    
+    <div class="container">
+        <!-- Only Image to Text section -->
+        <div class="section border">
+            <h2>Image to Text</h2>
+            <div class="input-container">
+                <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+            </div>
+
+            <div class="preview-container">
+                <img id="imagePreview" src="#" alt="Image Preview" style="display: none;">
+            </div>
+
+            <button onclick="captionImage()">Caption It</button>
+            
+            <div class="spinner" id="imageSpinner">
+                <img src="static/spinner.gif" alt="Loading...">
+            </div>
+
+            <div class="result" id="captionResult">
+                <!-- Caption result will be displayed here -->
+            </div>
+        </div>
+        <!-- End of Image to Text section -->
+    </div>
+    
+    <script>
+        function previewImage(event) {
+            var imageInput = document.getElementById('imageInput');
+            var imagePreview = document.getElementById('imagePreview');
+            imagePreview.style.display = 'block';
+            var reader = new FileReader();
+            reader.onload = function () {
+                imagePreview.src = reader.result;
+            };
+            reader.readAsDataURL(imageInput.files[0]);
+        }
+        
+        function captionImage() {
+            var imageInput = document.getElementById('imageInput');
+            var imageSpinner = document.getElementById('imageSpinner');
+            var captionResult = document.getElementById('captionResult');
+
+            // Check if an image file is selected
+            if (imageInput.files.length === 0) {
+                alert('Please select an image file first!');
+                return;
+            }
+
+            // Show the loading spinner
+            imageSpinner.style.display = 'block';
+            captionResult.innerHTML = '';  // Clear previous result
+
+            // Prepare the form data to send to the server
+            var formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            // Make an AJAX request to the server
+            fetch('/caption', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                imageSpinner.style.display = 'none';  // Hide the loading spinner
+                if (data.error) {
+                    captionResult.innerHTML = `<div style="color: red;">Error: ${data.error}</div>`;
+                } else {
+                    captionResult.innerHTML = `<div><strong>Caption:</strong> ${data.generated_text}</div>`;
+                }
+            })
+            .catch(error => {
+                imageSpinner.style.display = 'none';  // Hide the loading spinner
+                captionResult.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            });
+        }
+    </script>
+</body>
+
+</html>
